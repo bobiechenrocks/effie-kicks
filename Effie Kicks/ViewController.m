@@ -191,7 +191,7 @@ NSString * const kEffieKicksTodayKicks = @"EffieKicksTodayKicks";
         kicksToday[kEffieKicksTodayKicks] = @[];
         self.kicksToday = kicksToday;
 
-        [self updateKicksHistory];
+        NSLog(@"kicks update (after reset:\n%@", self.kicksHistory);
     }
     
     [self.elapsedTimer invalidate];
