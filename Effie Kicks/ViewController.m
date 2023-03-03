@@ -18,7 +18,11 @@ NSString * const kEffieKicksTodayKicks = @"EffieKicksTodayKicks";
 @property (nonatomic, assign) NSUInteger kickCount;
 @property (nonatomic, strong) NSDictionary *kicksToday;
 
+@property (nonatomic, strong) NSTimer *elapsedTimer;
+@property (nonatomic, strong) NSDate *startTime;
+
 @property (weak, nonatomic) IBOutlet UIButton *kickButton;
+@property (weak, nonatomic) IBOutlet UILabel *elapsedTimeLabel;
 @property (weak, nonatomic) IBOutlet UIButton *kick1;
 @property (weak, nonatomic) IBOutlet UIButton *kick2;
 @property (weak, nonatomic) IBOutlet UIButton *kick3;
@@ -87,6 +91,12 @@ NSString * const kEffieKicksTodayKicks = @"EffieKicksTodayKicks";
 
 - (void)startCountingKicks {
     self.kickCount = 1;
+
+    self.startTime = [NSDate date];
+    [self updateElapsedTime];
+    self.elapsedTimer = [NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer *timer) {
+        [self updateElapsedTime];
+    }];
     
     [self initializeKicksToday];
     [self updateKicksHistory];
@@ -104,7 +114,7 @@ NSString * const kEffieKicksTodayKicks = @"EffieKicksTodayKicks";
 - (void)initializeKicksToday {
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yyyyMMdd"];
-    [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"UTC"]];
+    [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"UTC-8"]];
     NSString *date = [dateFormatter stringFromDate:[NSDate date]];
     
     NSArray *kicks = @[@([[NSDate date] timeIntervalSince1970])];
@@ -125,6 +135,25 @@ NSString * const kEffieKicksTodayKicks = @"EffieKicksTodayKicks";
     kicksToday[kEffieKicksTodayKicks] = kicks;
     
     self.kicksToday = kicksToday;
+}
+
+- (void)updateElapsedTime {
+    self.elapsedTimeLabel.hidden = NO;
+    self.elapsedTimeLabel.text = [self elapsedTimeString];
+}
+
+- (NSString *)elapsedTimeString {
+    NSTimeInterval elapsedTime = [[NSDate date] timeIntervalSinceDate:self.startTime];
+
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    if (elapsedTime > 3600) {
+        [dateFormatter setDateFormat:@"hh:mm:ss"];
+    } else {
+        [dateFormatter setDateFormat:@"mm:ss"];
+    }
+    [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"UTC-8"]];
+    
+    return [dateFormatter stringFromDate:[NSDate dateWithTimeIntervalSince1970:elapsedTime]];
 }
 
 - (void)updateKicksHistory {
@@ -164,6 +193,9 @@ NSString * const kEffieKicksTodayKicks = @"EffieKicksTodayKicks";
 
         [self updateKicksHistory];
     }
+    
+    [self.elapsedTimer invalidate];
+    self.elapsedTimeLabel.hidden = YES;
 
     [self.kickButton setTitle:@"Start" forState:UIControlStateNormal];
     [self updateKickEmojis];
@@ -259,7 +291,7 @@ NSString * const kEffieKicksTodayKicks = @"EffieKicksTodayKicks";
         return @"";
     }
     
-    NSString *summary = [NSString stringWithFormat:@"%ld kicks. Well done!\n", self.kickCount];
+    NSString *summary = [NSString stringWithFormat:@"%ld kicks. Well done!\nElapsed time: %@\n", self.kickCount, [self elapsedTimeString]];
 
     NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
     [formatter setDateFormat:@"HH:mm:ss"];
